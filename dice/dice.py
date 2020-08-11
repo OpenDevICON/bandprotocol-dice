@@ -67,7 +67,7 @@ class Dice(IconScoreBase):
         seed = self.create_interface_score(Address.from_string("cxcb1fe95bd94143891493f1ddf6ca920b31dcbd99"), RandomNumber)
         seed.set_number(proof)
         rndm = seed.get_number()
-        return (rndm["number"] % 99 + 1)
+        return (rndm["number"] % 100)
 
     @payable
     @external
