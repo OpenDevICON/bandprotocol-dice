@@ -32,6 +32,7 @@ class App extends Component {
     side_bet_amount: 0.01,
     side_bet_type: "digits_match",
     main_bet_amount: 1,
+    result: ""
   };
 
   componentDidMount = async () => {
@@ -159,6 +160,7 @@ class App extends Component {
       txObj,
       selectedWallet
     );
+    console.log(signedTransaction.getProperties())
     const txHash = await iconService
       .sendTransaction(signedTransaction)
       .execute();
@@ -169,6 +171,8 @@ class App extends Component {
         const transactionResult = await iconService
           .getTransactionResult(txHash)
           .execute();
+        console.log(transactionResult.eventLogs[1].indexed[2]);
+        this.setState({result: transactionResult.eventLogs[1].indexed[2]})
         console.log(
           "transaction status(1:success, 0:failure): " +
             transactionResult.status
@@ -271,7 +275,8 @@ class App extends Component {
       side_bet_type,
       nonEvmProof,
       selectedAddress,
-      main_bet_amount
+      main_bet_amount,
+      result
     } = this.state;
     return (
       <Fragment>
@@ -369,6 +374,8 @@ class App extends Component {
           ) : null}
           <p></p>
           <Button onClick={this.callBet}> Place Bet </Button>
+          <p></p>
+          <p> Bet Results: {result} </p>
         </Container>
       </Fragment>
     );
