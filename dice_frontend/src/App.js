@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from "react";
 import Container from "react-bootstrap/Container";
 import IconService from "icon-sdk-js";
+import PRIV_KEY from "./config";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 
@@ -13,9 +14,7 @@ const {
 } = IconService;
 const provider = new HttpProvider("https://bicon.net.solidwallet.io/api/v3");
 const iconService = new IconService(provider);
-const deployer_wallet = IconWallet.loadPrivateKey(
-  "fffa4a56a0517ef5b53c37540c260a4d43a07d1879a17009149f04fe52afaca4"
-);
+const deployer_wallet = IconWallet.loadPrivateKey(PRIV_KEY);
 const caller_wallet = IconWallet.create();
 // console.log(caller_wallet)
 const score_address = "cx5d432d5374f1bea3a19a9e4644f810836a66eefe";
@@ -171,8 +170,9 @@ class App extends Component {
         const transactionResult = await iconService
           .getTransactionResult(txHash)
           .execute();
-        console.log(transactionResult.eventLogs[1].indexed[2]);
-        this.setState({result: transactionResult.eventLogs[1].indexed[2]})
+        const win =  transactionResult.eventLogs.filter(a => a.indexed[0] === "BetResult(int,str,int)")
+        console.log(win[0].indexed[2])
+        this.setState({result: win[0].indexed[2]})
         console.log(
           "transaction status(1:success, 0:failure): " +
             transactionResult.status
