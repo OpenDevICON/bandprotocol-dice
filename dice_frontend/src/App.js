@@ -16,22 +16,21 @@ const provider = new HttpProvider("https://bicon.net.solidwallet.io/api/v3");
 const iconService = new IconService(provider);
 const deployer_wallet = IconWallet.loadPrivateKey(PRIV_KEY);
 const caller_wallet = IconWallet.create();
-// console.log(caller_wallet)
-const score_address = "cx5d432d5374f1bea3a19a9e4644f810836a66eefe";
+const score_address = "cx6788b178f4c86abb4584d4c2ce7348f55acc153b";
 
 class App extends Component {
   state = {
     gameStatus: null,
     selectedAddress: deployer_wallet.getAddress(),
     selectedWallet: null,
-    nonEvmProof:
-      "0000000c62616e64636861696e2e6a73000000000000000b000000080000000000000001000000000000000200000000000000010000000c62616e64636861696e2e6a73000000000000a2e00000000000000002000000005f3619ba000000005f3619bd0100000006000000023130",
     upper: 92,
     lower: 21,
     side_bet_amount: 0.01,
     side_bet_type: "digits_match",
     main_bet_amount: 1,
-    result: ""
+    result: "",
+    mainPayoutAmount: "",
+    sidePayoutAmount: ""
   };
 
   componentDidMount = async () => {
@@ -53,6 +52,7 @@ class App extends Component {
   };
 
   prerequisties = () => {
+    console.log(process.env)
     if (this.state.selectedAddress === deployer_wallet.getAddress()) {
       this.setState({ selectedWallet: deployer_wallet });
       console.log("deployer ", this.state.selectedWallet);
@@ -120,70 +120,6 @@ class App extends Component {
       }
     }
   };
-
-  callBet = async () => {
-    this.prerequisties();
-    const {
-      upper,
-      lower,
-      side_bet_amount,
-      side_bet_type,
-      nonEvmProof,
-      selectedWallet,
-      main_bet_amount
-    } = this.state;
-    const txObj = new IconBuilder.CallTransactionBuilder()
-      .from(selectedWallet.getAddress()) // selected
-      .to(score_address)
-      .stepLimit(IconConverter.toBigNumber("200000000"))
-      .nid(IconConverter.toBigNumber("3"))
-      .nonce(IconConverter.toBigNumber("1"))
-      .value(IconAmount.of((main_bet_amount + side_bet_amount), IconAmount.Unit.ICX).toLoop())
-      .version(IconConverter.toBigNumber("3"))
-      .timestamp(new Date().getTime() * 1000)
-      .method("call_bet")
-      .params({
-        upper: IconConverter.toHex(IconConverter.toBigNumber(upper)),
-        lower: IconConverter.toHex(IconConverter.toBigNumber(lower)),
-        proof: nonEvmProof,
-        side_bet_amount: IconConverter.toHex(
-          IconConverter.toBigNumber(
-            IconAmount.of(side_bet_amount, IconAmount.Unit.ICX).toLoop()
-          )
-        ),
-        side_bet_type: side_bet_type,
-      })
-      .build();
-    console.log("CallTransactionBuilder called.");
-    const signedTransaction = new IconService.SignedTransaction(
-      txObj,
-      selectedWallet
-    );
-    console.log(signedTransaction.getProperties())
-    const txHash = await iconService
-      .sendTransaction(signedTransaction)
-      .execute();
-    console.log(txHash);
-    let check = false;
-    while (check !== true) {
-      try {
-        const transactionResult = await iconService
-          .getTransactionResult(txHash)
-          .execute();
-        const win =  transactionResult.eventLogs.filter(a => a.indexed[0] === "BetResult(int,str,int)")
-        console.log(win[0].indexed[2])
-        this.setState({result: win[0].indexed[2]})
-        console.log(
-          "transaction status(1:success, 0:failure): " +
-            transactionResult.status
-        );
-        check = true;
-      } catch (e) {
-        console.log("Trying again...");
-      }
-    }
-  };
-
   transaction = async () => {
     const txObj = new IconBuilder.IcxTransactionBuilder()
       .from(deployer_wallet.getAddress())
@@ -220,45 +156,77 @@ class App extends Component {
       }
     }
   };
-
-  getBandchainProof = async () => {
-    const BandChain = require("@bandprotocol/bandchain.js");
-    const endpoint = "http://guanyu-devnet.bandchain.org/rest";
-    const mnemonic =
-      "ask jar coast prison educate decide elephant find pigeon truth reason double figure enroll scheme melt soldier damage debris recall brief jeans million essence";
-    const oracleScriptID = 11;
-    const minCount = 1;
-    const askCount = 2;
-    const gasAmount = 100;
-    const gasLimit = 300000;
-
-    (async () => {
-      const bandchain = new BandChain(endpoint);
-      const oracleScript = await bandchain.getOracleScript(oracleScriptID);
-      try {
-        const requestID = await bandchain.submitRequestTx(
-          oracleScript,
-          { size: 1 },
-          { minCount, askCount },
-          mnemonic,
-          gasAmount,
-          gasLimit
-        );
-        const nonEvmProof = await bandchain.getRequestNonEVMProof(requestID);
-        console.log(nonEvmProof);
-        this.setState({ nonEvmProof: nonEvmProof });
-      } catch (e) {
-        console.error("Data request failed with reason: ", e);
-      }
-    })();
-  };
-
-  handleSubmit = async (event) => {
+  
+  callBet = async (event) => {
     event.preventDefault();
     if (this.state.upper - this.state.lower >= 6) {
       console.log("Submitted");
-    } else {
-      console.log("Difference should be 6 or more");
+    }
+    this.prerequisties();
+    const {
+      upper,
+      lower,
+      side_bet_amount,
+      side_bet_type,
+      selectedWallet,
+      main_bet_amount
+    } = this.state;
+    const txObj = new IconBuilder.CallTransactionBuilder()
+      .from(selectedWallet.getAddress()) // selected
+      .to(score_address)
+      .stepLimit(IconConverter.toBigNumber("200000000"))
+      .nid(IconConverter.toBigNumber("3"))
+      .nonce(IconConverter.toBigNumber("1"))
+      .value(IconAmount.of((main_bet_amount + side_bet_amount), IconAmount.Unit.ICX).toLoop())
+      .version(IconConverter.toBigNumber("3"))
+      .timestamp(new Date().getTime() * 1000)
+      .method("call_bet")
+      .params({
+        upper: IconConverter.toHex(IconConverter.toBigNumber(upper)),
+        lower: IconConverter.toHex(IconConverter.toBigNumber(lower)),
+        side_bet_amount: IconConverter.toHex(
+          IconConverter.toBigNumber(
+            IconAmount.of(side_bet_amount, IconAmount.Unit.ICX).toLoop()
+          )
+        ),
+        side_bet_type: side_bet_type,
+      })
+      .build();
+    console.log("CallTransactionBuilder called.");
+    const signedTransaction = new IconService.SignedTransaction(
+      txObj,
+      selectedWallet
+    );
+    console.log(signedTransaction.getProperties())
+    const txHash = await iconService
+      .sendTransaction(signedTransaction)
+      .execute();
+    console.log(txHash);
+    let check = false;
+    while (check !== true) {
+      try {
+        const transactionResult = await iconService
+          .getTransactionResult(txHash)
+          .execute();
+        
+        const payoutAmount = transactionResult.eventLogs.filter(a => a.indexed[0] === "PayoutAmount(int,int,int)")
+        this.setState({mainPayoutAmount: parseInt(payoutAmount[0].indexed[2])/10 ** 18})
+        const win = transactionResult.eventLogs.filter(a => a.indexed[0] === "BetResult(int,str,int)")
+        console.log(win[0].indexed[2])
+        this.setState({
+          result: win[0].indexed[2],
+          sidePayoutAmount: parseInt(payoutAmount[0].indexed[3])/10 ** 18
+        })
+        console.log(payoutAmount[0].indexed[2])
+        console.log(payoutAmount[0].indexed[3])
+        console.log(
+          "transaction status(1:success, 0:failure): " +
+            transactionResult.status
+        );
+        check = true;
+      } catch (e) {
+        console.log("Trying again...");
+      }
     }
   };
 
@@ -273,7 +241,6 @@ class App extends Component {
       lower,
       side_bet_amount,
       side_bet_type,
-      nonEvmProof,
       selectedAddress,
       main_bet_amount,
       result
@@ -296,20 +263,18 @@ class App extends Component {
           </Form.Group>
           <p>Deployer Address: {deployer_wallet.getAddress()}</p>
           <p>Caller Address: {caller_wallet.getAddress()}</p>
-          <p> Load funds in the caller address from ibriz faucet. </p>
+          <p> Load funds in the caller address from <b><a href="https://icon-faucet.ibriz.ai/">ibriz faucet</a></b>. </p>
           <Button onClick={this.isGameOn}> Game Status </Button>
-          {this.state.gameStatus ? <p> The game is on. </p> : null}
+          {this.state.gameStatus ? <p> The game is on. </p> : <p> The game is off. </p>}
           <p></p>
-          <Button onClick={this.prerequisties}> Account Loaded </Button>
+          <Button onClick={this.prerequisties}> Account Loaded: </Button>
           <p></p>
           <Button onClick={this.toggleGame}> Toggle Game Status </Button>
           <p></p>
-          <Button onClick={this.getBandchainProof}> Get Proof </Button>
-          <p></p>
-          <Button onClick={this.transaction}> Transaction </Button>
+          <Button onClick={this.transaction}> Transaction (Supply 40 ICX to SCORE)</Button>
           {this.state.gameStatus ? (
             <div>
-              <Form onSubmit={this.handleSubmit}>
+              <Form onSubmit={this.callBet}>
                 <Form.Group>
                   <Form.Label>Upper</Form.Label>
                   <Form.Control
@@ -325,14 +290,6 @@ class App extends Component {
                     type="number"
                     name="lower"
                     value={lower}
-                    onChange={this.handleChange}
-                  />
-                </Form.Group>
-                <Form.Group>
-                  <Form.Label>Non Evm Proof</Form.Label>
-                  <Form.Control
-                    name="nonEvmProof"
-                    value={nonEvmProof}
                     onChange={this.handleChange}
                   />
                 </Form.Group>
@@ -368,14 +325,14 @@ class App extends Component {
                     <option>icon_logo2</option>
                   </Form.Control>
                 </Form.Group>
-                <Button type="submit">Submit Params</Button>
+                <Button type="submit">Call Bet</Button>
               </Form>{" "}
             </div>
           ) : null}
           <p></p>
-          <Button onClick={this.callBet}> Place Bet </Button>
-          <p></p>
           <p> Bet Results: {result} </p>
+          <p></p>
+          <p> Main Bet Amount: {this.state.mainPayoutAmount} ICX<br/> Side Bet Amount: {this.state.sidePayoutAmount} ICX</p>
         </Container>
       </Fragment>
     );

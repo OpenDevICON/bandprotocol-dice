@@ -63,18 +63,17 @@ class Dice(IconScoreBase):
     def get_game_status(self) -> bool:
         return self._game_on.get()
 
-    def get_random(self, proof) -> int:
+    def get_random(self) -> int:
         seed = self.create_interface_score(Address.from_string("cxcb1fe95bd94143891493f1ddf6ca920b31dcbd99"), RandomNumber)
-        seed.set_number(proof)
         rndm = seed.get_number()
         return (rndm["number"] % 100)
 
     @payable
     @external
-    def call_bet(self,upper:int, lower:int, proof:bytes, side_bet_amount:int, side_bet_type:str) -> None:
-        return self.__bet(upper, lower, proof, side_bet_amount, side_bet_type)
+    def call_bet(self,upper:int, lower:int, side_bet_amount:int, side_bet_type:str) -> None:
+        return self.__bet(upper, lower, side_bet_amount, side_bet_type)
 
-    def __bet(self,upper:int, lower:int, proof:bytes, side_bet_amount:int, side_bet_type:str) -> None:
+    def __bet(self,upper:int, lower:int, side_bet_amount:int, side_bet_type:str) -> None:
         side_bet_win = False
         side_bet_set = False
         side_bet_payout = 0
@@ -119,7 +118,7 @@ class Dice(IconScoreBase):
         payout = side_bet_payout + main_bet_payout
         if self.icx.get_balance(self.address) < payout:
             revert('Not enough in treasury to make the play.')
-        winningNumber = self.get_random(proof)
+        winningNumber = self.get_random()
         if lower <= winningNumber <= upper:
             main_bet_win = True
         else:
