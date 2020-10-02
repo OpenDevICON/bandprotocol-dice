@@ -48,11 +48,9 @@ class App extends Component {
     } else {
       this.setState({ gameStatus: false });
     }
-    console.log(result);
   };
 
   prerequisties = () => {
-    console.log(process.env)
     if (this.state.selectedAddress === deployer_wallet.getAddress()) {
       this.setState({ selectedWallet: deployer_wallet });
       console.log("deployer ", this.state.selectedWallet);
@@ -78,7 +76,6 @@ class App extends Component {
     } else {
       this.setState({ gameStatus: false });
     }
-    console.log(result);
   };
 
   toggleGame = async () => {
@@ -94,7 +91,6 @@ class App extends Component {
       .timestamp(new Date().getTime() * 1000)
       .method("toggle_game_status")
       .build();
-    console.log("CallTransactionBuilder called.");
     const signedTransaction = new IconService.SignedTransaction(
       txObj,
       selectedWallet
@@ -192,12 +188,10 @@ class App extends Component {
         side_bet_type: side_bet_type,
       })
       .build();
-    console.log("CallTransactionBuilder called.");
     const signedTransaction = new IconService.SignedTransaction(
       txObj,
       selectedWallet
     );
-    console.log(signedTransaction.getProperties())
     const txHash = await iconService
       .sendTransaction(signedTransaction)
       .execute();
@@ -212,13 +206,10 @@ class App extends Component {
         const payoutAmount = transactionResult.eventLogs.filter(a => a.indexed[0] === "PayoutAmount(int,int,int)")
         this.setState({mainPayoutAmount: parseInt(payoutAmount[0].indexed[2])/10 ** 18})
         const win = transactionResult.eventLogs.filter(a => a.indexed[0] === "BetResult(int,str,int)")
-        console.log(win[0].indexed[2])
         this.setState({
           result: win[0].indexed[2],
           sidePayoutAmount: parseInt(payoutAmount[0].indexed[3])/10 ** 18
         })
-        console.log(payoutAmount[0].indexed[2])
-        console.log(payoutAmount[0].indexed[3])
         console.log(
           "transaction status(1:success, 0:failure): " +
             transactionResult.status
