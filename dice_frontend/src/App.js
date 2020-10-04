@@ -4,6 +4,14 @@ import IconService from "icon-sdk-js";
 import PRIV_KEY from "./config";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
+import { Col, Row, Spinner } from "react-bootstrap";
+import InputRange from 'react-input-range';
+import 'react-input-range/lib/css/index.css';
+
+import './App.scss';
+import Navbar from './components/Navbar';
+
+
 
 const {
   IconBuilder,
@@ -20,21 +28,27 @@ const score_address = "cx6788b178f4c86abb4584d4c2ce7348f55acc153b";
 
 class App extends Component {
   state = {
+    errorMsg: '',
+    loading: false,
     gameStatus: null,
     selectedAddress: deployer_wallet.getAddress(),
     selectedWallet: null,
-    upper: 92,
-    lower: 21,
+    upper: 20,
+    lower: 2,
     side_bet_amount: 0.01,
     side_bet_type: "digits_match",
     main_bet_amount: 1,
     result: "",
     mainPayoutAmount: "",
-    sidePayoutAmount: ""
+    sidePayoutAmount: "",
+    bet_range: {
+      max: 55,
+      min: 5,
+    },
   };
 
   componentDidMount = async () => {
-    this.prerequisties();
+    await this.prerequisties();
     const { CallBuilder } = IconBuilder;
     const callBuilder = new CallBuilder();
     const call = callBuilder
@@ -79,7 +93,7 @@ class App extends Component {
   };
 
   toggleGame = async () => {
-    this.prerequisties();
+    await this.prerequisties();
     const { selectedWallet } = this.state;
     const txObj = new IconBuilder.CallTransactionBuilder()
       .from(selectedWallet.getAddress()) // selected
@@ -95,12 +109,18 @@ class App extends Component {
       txObj,
       selectedWallet
     );
-    const txHash = await iconService
-      .sendTransaction(signedTransaction)
-      .execute();
+    let txHash;
+    try {
+      txHash = await iconService
+        .sendTransaction(signedTransaction)
+        .execute();
+    } catch (e) {
+      this.setState({errorMsg: e});
+    }
     console.log(txHash);
     let check = false;
-    while (check !== true) {
+    this.setState({loading: true});
+    while (check !== true && txHash) {
       try {
         const transactionResult = await iconService
           .getTransactionResult(txHash)
@@ -111,10 +131,12 @@ class App extends Component {
         );
         check = true;
         this.setState({ gameStatus: !this.state.gameStatus });
+        this.setState({errorMsg: ''});
       } catch (e) {
         console.log("Trying again...");
       }
     }
+    this.setState({loading: false});
   };
   transaction = async () => {
     const txObj = new IconBuilder.IcxTransactionBuilder()
@@ -158,15 +180,17 @@ class App extends Component {
     if (this.state.upper - this.state.lower >= 6) {
       console.log("Submitted");
     }
-    this.prerequisties();
+    await this.prerequisties();
     const {
       upper,
       lower,
       side_bet_amount,
       side_bet_type,
       selectedWallet,
-      main_bet_amount
+      main_bet_amount, 
+      bet_range
     } = this.state;
+    console.log("SELECTED WALLET = ", selectedWallet.getAddress());
     const txObj = new IconBuilder.CallTransactionBuilder()
       .from(selectedWallet.getAddress()) // selected
       .to(score_address)
@@ -178,8 +202,8 @@ class App extends Component {
       .timestamp(new Date().getTime() * 1000)
       .method("call_bet")
       .params({
-        upper: IconConverter.toHex(IconConverter.toBigNumber(upper)),
-        lower: IconConverter.toHex(IconConverter.toBigNumber(lower)),
+        upper: IconConverter.toHex(IconConverter.toBigNumber(bet_range.max)),
+        lower: IconConverter.toHex(IconConverter.toBigNumber(bet_range.min)),
         side_bet_amount: IconConverter.toHex(
           IconConverter.toBigNumber(
             IconAmount.of(side_bet_amount, IconAmount.Unit.ICX).toLoop()
@@ -188,16 +212,23 @@ class App extends Component {
         side_bet_type: side_bet_type,
       })
       .build();
+      console.log(txObj);
     const signedTransaction = new IconService.SignedTransaction(
       txObj,
       selectedWallet
     );
-    const txHash = await iconService
-      .sendTransaction(signedTransaction)
-      .execute();
+    let txHash;
+    try {
+      txHash = await iconService
+        .sendTransaction(signedTransaction)
+        .execute();
+    } catch (e) {
+      this.setState({errorMsg: e});
+    }
     console.log(txHash);
     let check = false;
-    while (check !== true) {
+    this.setState({loading: true});
+    while (check !== true && txHash) {
       try {
         const transactionResult = await iconService
           .getTransactionResult(txHash)
@@ -215,10 +246,13 @@ class App extends Component {
             transactionResult.status
         );
         check = true;
+        this.setState({errorMsg: ''});
       } catch (e) {
         console.log("Trying again...");
+        console.log(e);
       }
     }
+    this.setState({loading: false});
   };
 
   handleChange = (event) => {
@@ -226,104 +260,125 @@ class App extends Component {
     this.setState({ [name]: value });
   };
 
+  handleWalletChange = (walletAddress) => {
+    this.setState({ selectedAddress: walletAddress });
+  }
+
+  handleBetRangeChange = (range) => {
+    if(range.max - range.min >= 6 && range.max-range.min <= 90) {
+      this.setState({bet_range: range});
+    }
+  }
+
   render() {
     const {
+      errorMsg,
+      loading,
       upper,
       lower,
       side_bet_amount,
       side_bet_type,
       selectedAddress,
       main_bet_amount,
-      result
+      result,
+      bet_range
     } = this.state;
     return (
       <Fragment>
-        <Container>
-          <Form.Group controlId="exampleForm.ControlSelect1">
-            <Form.Label>Select Address</Form.Label>
-            <Form.Control
-              as="select"
-              type="text"
-              name="selectedAddress"
-              value={selectedAddress}
-              onChange={this.handleChange}
-            >
-              <option>{deployer_wallet.getAddress()}</option>
-              <option>{caller_wallet.getAddress()}</option>
-            </Form.Control>
-          </Form.Group>
-          <p>Deployer Address: {deployer_wallet.getAddress()}</p>
-          <p>Caller Address: {caller_wallet.getAddress()}</p>
-          <p> Load funds in the caller address from <b><a href="https://icon-faucet.ibriz.ai/">ibriz faucet</a></b>. </p>
-          <Button onClick={this.isGameOn}> Game Status </Button>
-          {this.state.gameStatus ? <p> The game is on. </p> : <p> The game is off. </p>}
-          <p></p>
-          <Button onClick={this.prerequisties}> Account Loaded: </Button>
-          <p></p>
-          <Button onClick={this.toggleGame}> Toggle Game Status </Button>
-          <p></p>
-          <Button onClick={this.transaction}> Transaction (Supply 40 ICX to SCORE)</Button>
-          {this.state.gameStatus ? (
-            <div>
-              <Form onSubmit={this.callBet}>
-                <Form.Group>
-                  <Form.Label>Upper</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="upper"
-                    value={upper}
-                    onChange={this.handleChange}
-                  />
-                </Form.Group>
-                <Form.Group>
-                  <Form.Label>Lower</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="lower"
-                    value={lower}
-                    onChange={this.handleChange}
-                  />
-                </Form.Group>
-                <Form.Group>
-                  <Form.Label>Side Bet Amount (in ICX)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="side_bet_amount"
-                    value={side_bet_amount}
-                    onChange={this.handleChange}
-                  />
-                </Form.Group>
-                <Form.Group>
-                  <Form.Label>Main Bet Amount(in ICX)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="main_bet_amount"
-                    value={main_bet_amount}
-                    onChange={this.handleChange}
-                  />
-                </Form.Group>
-                <Form.Group controlId="exampleForm.ControlSelect1">
-                  <Form.Label>Side Bet Type</Form.Label>
-                  <Form.Control
-                    as="select"
-                    type="text"
-                    name="side_bet_type"
-                    value={side_bet_type}
-                    onChange={this.handleChange}
-                  >
-                    <option>digits_match</option>
-                    <option>icon_logo1</option>
-                    <option>icon_logo2</option>
-                  </Form.Control>
-                </Form.Group>
-                <Button type="submit">Call Bet</Button>
-              </Form>{" "}
-            </div>
-          ) : null}
-          <p></p>
-          <p> Bet Results: {result} </p>
-          <p></p>
-          <p> Main Bet Amount: {this.state.mainPayoutAmount} ICX<br/> Side Bet Amount: {this.state.sidePayoutAmount} ICX</p>
+        
+        <Navbar 
+          wallets = {[deployer_wallet.getAddress(), caller_wallet.getAddress()]} 
+          currentWallet = {selectedAddress} 
+          gameStatus = {this.state.gameStatus}
+          userStatus = {true}
+          handleWalletChange = {this.handleWalletChange}
+          handleToggleGameStatus = {this.toggleGame}
+        />
+        <Container className='container'>
+          <Row>
+            <Col md={8}>
+            {this.state.gameStatus ? (
+              <div>
+                <h3 className='bet-range-head'>Bet Range</h3>
+                <Form onSubmit={this.callBet}>
+                  <div className='slider-container mt-4'>
+                    <InputRange
+                      maxValue={99}
+                      minValue={0}
+                      value={bet_range}
+                      allowSameValues
+                      onChange={this.handleBetRangeChange}
+                      // draggableTrack
+                      // formatLabel={(value, type) => console.log("ffsfd", value, type)}
+                    />
+                  </div>
+                  <div className='form-group-container'>
+                  <Form.Group className='form-group'>
+                    <Form.Label>Main Bet Amount (ICX)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="main_bet_amount"
+                      value={main_bet_amount}
+                      onChange={this.handleChange}
+                    />
+                  </Form.Group>
+                  </div>
+                  <div className='form-group-container'>
+                  <Form.Group className='from-group'>
+                    <Form.Label>Side Bet Amount (in ICX)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      name="side_bet_amount"
+                      value={side_bet_amount}
+                      onChange={this.handleChange}
+                    />
+                  </Form.Group>
+                  <Form.Group controlId="exampleForm.ControlSelect1">
+                    <Form.Label>Side Bet Type</Form.Label>
+                    <Form.Control
+                      as="select"
+                      type="text"
+                      name="side_bet_type"
+                      value={side_bet_type}
+                      onChange={this.handleChange}
+                    >
+                      <option>digits_match</option>
+                      <option>icon_logo1</option>
+                      <option>icon_logo2</option>
+                    </Form.Control>
+                  </Form.Group>
+                  </div>
+                  <div className='form-group-container'>
+                    <Button type="submit" className='btn-success'>Place Bet</Button>
+                  </div>
+                  {!!errorMsg && <div className='text-red mt-2 mb-2'>{errorMsg}</div>}
+                </Form>{" "}
+              </div>
+            ) : null}
+            <p></p>
+            <p> Bet Results: {result} </p>
+            <p></p>
+            <p> Main Bet Amount: {this.state.mainPayoutAmount} ICX<br/> Side Bet Amount: {this.state.sidePayoutAmount} ICX</p>
+            </Col>
+            <Col md={3} className='right-col'>
+              <p>Deployer Address: {deployer_wallet.getAddress()}</p>
+              <p>Caller Address: {caller_wallet.getAddress()}</p>
+              <p> Load funds from <b><a href="https://icon-faucet.ibriz.ai/">iBriz faucet</a></b>. </p>
+            </Col>
+          </Row>
+          {loading && 
+            <>
+              <div className='loading-overlay'></div>
+                <Spinner
+                  className='loading-spinner'
+                  as="span"
+                  animation="grow"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                />
+            </>
+          }
         </Container>
       </Fragment>
     );
