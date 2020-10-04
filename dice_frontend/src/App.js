@@ -272,6 +272,8 @@ class App extends Component {
     const {
       errorMsg,
       loading,
+      upper,
+      lower,
       side_bet_amount,
       side_bet_type,
       selectedAddress,
