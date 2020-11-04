@@ -1,0 +1,133 @@
+body {
+  background-color: #2f2c4e;
+  p {
+    color: white;
+  }
+  label {
+    color: white;
+  }
+}
+
+.green-circle {
+  margin: 0 5px 0 5px;
+  height: 12px;
+  width: 12px;
+  background-color: rgb(9, 211, 59);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.red-circle {
+  margin: 0 5px 0 5px;
+  height: 12px;
+  width: 12px;
+  background-color: rgb(236, 15, 15);
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.navbar {
+  background-color: #201046;
+  a, span {
+    color: white !important;
+  }
+}
+
+.dropdown {
+  .dropdown-menu {
+    background-color: #404040;
+    .dropdown-item {
+      &:hover {
+        background-color: #5e615f;
+      }
+    }
+  }
+}
+
+.input-range__track--active {
+  background: #737caf !important;
+}
+
+.input-range__slider {
+  background: #737caf !important;
+}
+
+.input-range__label-container {
+  font-size: 15px;
+  padding: 5px;
+  font-weight: 700;
+  position: relative;
+  margin-bottom: 15px;
+  color: #fff;
+  text-shadow: 0 0 1px #000;
+  margin-left: -6px;
+}
+
+.slider-container {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-range__label--max {
+  display: none;
+}
+
+.input-range__label--min {
+  display: none;
+}
+
+.form-group-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 30%;
+}
+
+.bet-range-head {
+  color: white;
+  text-align: center;
+  margin-top: 30px;
+}
+
+.right-col {
+  margin-top: 50px;
+  @media(min-width: 1100px) {
+    transform: translateX(70px);
+  }
+}
+
+.loading-overlay{
+  position: fixed;
+  top: 0;
+  left: 0;
+	width: 100vw;
+	height: 100vh;
+  background: rgba(0,0,0,0.5);
+  // visibility: hidden;
+}
+
+.loading-spinner {
+  position: fixed;
+  top: 50%;
+  left:50%;
+  width: 60px;
+  height: 60px;
+  background: #fff;
+  display:block;
+  text-align:center;;
+  color: #FFF;
+  transform: translateY(-50%);
+  z-index: 1000;
+}
+
+.text-red {
+  color: red;
+}
