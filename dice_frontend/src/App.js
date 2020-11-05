@@ -356,7 +356,7 @@ class App extends Component {
             <p></p>
             <p> Bet Results: {result} </p>
             <p></p>
-            <p> Main Bet Amount: {this.state.mainPayoutAmount} ICX<br/> Side Bet Amount: {this.state.sidePayoutAmount} ICX</p>
+            <p> Main Bet Payout: {this.state.mainPayoutAmount} ICX<br/> Side Bet Payout: {this.state.sidePayoutAmount} ICX</p>
             </Col>
             <Col md={3} className='right-col'>
               <p>Deployer Address: {deployer_wallet.getAddress()}</p>
