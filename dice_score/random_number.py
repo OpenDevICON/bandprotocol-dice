@@ -89,7 +89,7 @@ class RandomNumber(IconScoreBase):
         #     revert(
         #         f"{self.msg.sender} is not authorized to make set_number calls. owner is {self.owner}")
 
-        bridge = self.create_interface_score(self.bridge_address.get(), BRIDGE)
+        bridge = self.create_interface_score(self._bridge_address.get(), BRIDGE)
         req_res = bridge.relay_and_verify(proof)
         oracle_script_id = req_res["req"]["oracle_script_id"]
         params = req_res["req"]["calldata"]
