@@ -53,7 +53,7 @@ set_number = async () => {
   const txObj = new IconBuilder.CallTransactionBuilder()
     .from(deployer_wallet.getAddress())
     .to(score_address)
-    .stepLimit(IconConverter.toBigNumber("200000"))
+    .stepLimit(IconConverter.toBigNumber("2000000"))
     .nid(IconConverter.toBigNumber("3"))
     .nonce(IconConverter.toBigNumber("1"))
     .version(IconConverter.toBigNumber("3"))
@@ -75,7 +75,6 @@ set_number = async () => {
   }
   console.log(txHash);
   let check = false;
-  let loading = true;
   while (check !== true && txHash) {
     try {
       const transactionResult = await iconService
@@ -89,7 +88,6 @@ set_number = async () => {
       console.log("Trying again...");
     }
   }
-  loading = false;
 };
 
 set_number();
