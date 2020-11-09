@@ -1,0 +1,17 @@
+{
+  "name": "bandchain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@bandprotocol/bandchain.js": "^1.1.5",
+    "dotenv": "^8.2.0",
+    "icon-sdk-js": "0.0.18"
+  }
+}

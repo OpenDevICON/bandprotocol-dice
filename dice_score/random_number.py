@@ -65,7 +65,10 @@ class RandomNumber(IconScoreBase):
 
     def decode_result(self, b: bytes) -> int:
         (number, next) = decode_str(b)
-        return int(number)
+        try:
+            return int(number)
+        except:
+            return int(number, 16)
 
     @external
     def set_bridge(self, bridge_address: Address) -> None:
@@ -89,7 +92,7 @@ class RandomNumber(IconScoreBase):
         #     revert(
         #         f"{self.msg.sender} is not authorized to make set_number calls. owner is {self.owner}")
 
-        bridge = self.create_interface_score(self.bridge_address.get(), BRIDGE)
+        bridge = self.create_interface_score(self._bridge_address.get(), BRIDGE)
         req_res = bridge.relay_and_verify(proof)
         oracle_script_id = req_res["req"]["oracle_script_id"]
         params = req_res["req"]["calldata"]
@@ -99,6 +102,5 @@ class RandomNumber(IconScoreBase):
             revert(
                 f"error oracle script id should be 11 but got {oracle_script_id}")
 
-        (size) = self.decode_params(params)
         number = self.decode_result(result)
         self._number.set(number)
